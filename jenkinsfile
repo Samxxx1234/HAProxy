@@ -1,0 +1,41 @@
+def remote = [:]
+remote.name = 'localubuntu'
+remote.host = '172.26.4.143'
+remote.user = 'roman'
+remote.password = 'larva12345'
+remote.allowAnyHosts = true
+
+pipeline {
+    agent any
+    
+    stages {
+        stage('Build') {
+            steps {
+                // Get some code from a GitHub repository
+                //git clone 'https://github.com/guriandoro/docker.git'
+                echo 'Hallo'
+            }
+        }
+        stage('Start MySQL') {
+            steps {
+                script {
+                   sshCommand remote: remote, command: "cd /tmp/mysqlha/docker/replication/master-slave; ./make.sh up"
+                }
+            }
+        }
+        stage('Start Orchestrator MySQL') {
+            steps {
+                script {
+                   sshCommand remote: remote, command: "cd /tmp/mysqlha/docker/orchestrator/single-node; ./make.sh up replication_roman.c75699_master"
+                }
+            }
+        }
+        stage('Start HAProxy') {
+            steps {
+                script {
+                   sshCommand remote: remote, command: "cd /tmp/mysqlha/docker/proxy; docker-compose up -d"
+                }
+            }
+        }
+    }
+}
